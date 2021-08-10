@@ -24,9 +24,7 @@ import meteordevelopment.meteorclient.utils.misc.MeteorStarscript;
 import meteordevelopment.meteorclient.utils.misc.Names;
 import meteordevelopment.meteorclient.utils.misc.input.KeyAction;
 import meteordevelopment.meteorclient.utils.misc.input.KeyBinds;
-import meteordevelopment.meteorclient.utils.network.Capes;
 import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
-import meteordevelopment.meteorclient.utils.network.OnlinePlayers;
 import meteordevelopment.meteorclient.utils.player.DamageUtils;
 import meteordevelopment.meteorclient.utils.player.EChestMemory;
 import meteordevelopment.meteorclient.utils.player.Rotations;
@@ -128,7 +126,6 @@ public class MeteorClient implements ClientModInitializer {
         Outlines.init();
 
         MeteorExecutor.init();
-        Capes.init();
         RainbowColors.init();
         BlockIterator.init();
         EChestMemory.init();
@@ -151,7 +148,6 @@ public class MeteorClient implements ClientModInitializer {
         Systems.init();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            OnlinePlayers.leave();
             Systems.save();
             GuiThemes.save();
         }));
@@ -181,8 +177,6 @@ public class MeteorClient implements ClientModInitializer {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        Capes.tick();
-
         if (screenToOpen != null && mc.currentScreen == null) {
             mc.setScreen(screenToOpen);
             screenToOpen = null;

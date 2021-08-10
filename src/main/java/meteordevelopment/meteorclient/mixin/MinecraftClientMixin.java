@@ -18,7 +18,6 @@ import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.render.UnfocusedCPU;
 import meteordevelopment.meteorclient.utils.misc.Placeholders;
-import meteordevelopment.meteorclient.utils.network.OnlinePlayers;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.client.gui.screen.Screen;
@@ -63,7 +62,6 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
 
     @Inject(at = @At("HEAD"), method = "tick")
     private void onPreTick(CallbackInfo info) {
-        OnlinePlayers.update();
         doItemUseCalled = false;
 
         getProfiler().push("meteor-client_pre_update");

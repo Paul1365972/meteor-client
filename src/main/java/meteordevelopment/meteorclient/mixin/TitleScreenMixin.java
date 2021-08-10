@@ -5,19 +5,13 @@
 
 package meteordevelopment.meteorclient.mixin;
 
-import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.utils.Utils;
-import meteordevelopment.meteorclient.utils.misc.Version;
-import meteordevelopment.meteorclient.utils.network.Http;
-import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import meteordevelopment.meteorclient.utils.player.TitleScreenCreditsRenderer;
-import meteordevelopment.meteorclient.utils.render.PromptBuilder;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,26 +27,6 @@ public class TitleScreenMixin extends Screen {
     private void onRenderIdkDude(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (Utils.firstTimeTitleScreen) {
             Utils.firstTimeTitleScreen = false;
-            MeteorClient.LOG.info("Checking latest version of Meteor Client");
-
-            MeteorExecutor.execute(() -> {
-                String res = Http.get("https://meteorclient.com/api/version").sendString();
-                if (res == null) return;
-
-                Version latestVer = new Version(res);
-
-                if (latestVer.isHigherThan(Config.get().version)) {
-                    new PromptBuilder()
-                        .title("New Update")
-                        .message("A new version of Meteor has been released.")
-                        .message("Your version: %s", Config.get().version)
-                        .message("Latest version: %s", latestVer)
-                        .message("Do you want to update?")
-                        .onYes(() -> Util.getOperatingSystem().open("https://meteorclient.com/"))
-                        .promptId("new-update")
-                        .show();
-                }
-            });
         }
     }
 
