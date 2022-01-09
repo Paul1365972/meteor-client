@@ -18,18 +18,13 @@ import meteordevelopment.meteorclient.utils.render.color.Color;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtIo;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.Base64;
 import java.util.Objects;
 
-public abstract class Module implements ISerializable<Module> {
+public abstract class Module implements ISerializable<Module>, Comparable<Module> {
     protected final MinecraftClient mc;
 
     public final Category category;
@@ -41,9 +36,10 @@ public abstract class Module implements ISerializable<Module> {
     public final Settings settings = new Settings();
 
     private boolean active;
-    private boolean visible = true;
 
     public boolean serialize = true;
+    public boolean runInMainMenu = false;
+    public boolean autoSubscribe = true;
 
     public final Keybind keybind = Keybind.none();
     public boolean toggleOnBindRelease = false;
@@ -64,21 +60,21 @@ public abstract class Module implements ISerializable<Module> {
     public void onActivate() {}
     public void onDeactivate() {}
 
-    public void toggle(boolean onToggle) {
+    public void toggle() {
         if (!active) {
             active = true;
             Modules.get().addActive(this);
 
             settings.onActivated();
 
-            if (onToggle) {
-                MeteorClient.EVENT_BUS.subscribe(this);
+            if (runInMainMenu || Utils.canUpdate()) {
+                if (autoSubscribe) MeteorClient.EVENT_BUS.subscribe(this);
                 onActivate();
             }
         }
         else {
-            if (onToggle) {
-                MeteorClient.EVENT_BUS.unsubscribe(this);
+            if (runInMainMenu || Utils.canUpdate()) {
+                if (autoSubscribe) MeteorClient.EVENT_BUS.unsubscribe(this);
                 onDeactivate();
             }
 
@@ -87,12 +83,8 @@ public abstract class Module implements ISerializable<Module> {
         }
     }
 
-    public void toggle() {
-        toggle(true);
-    }
-
     public void sendToggledMsg() {
-        if (Config.get().chatCommandsInfo) {
+        if (Config.get().chatFeedback.get()) {
             ChatUtils.forceNextPrefixClass(getClass());
             ChatUtils.sendMsg(this.hashCode(), Formatting.GRAY, "Toggled (highlight)%s(default) %s(default).", title, isActive() ? Formatting.GREEN + "on" : Formatting.RED + "off");
         }
@@ -118,14 +110,6 @@ public abstract class Module implements ISerializable<Module> {
         ChatUtils.error(title, message, args);
     }
 
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
-
-    public boolean isVisible() {
-        return visible;
-    }
-
     public boolean isActive() {
         return active;
     }
@@ -145,7 +129,6 @@ public abstract class Module implements ISerializable<Module> {
         tag.put("settings", settings.toTag());
 
         tag.putBoolean("active", active);
-        tag.putBoolean("visible", visible);
 
         return tag;
     }
@@ -163,37 +146,9 @@ public abstract class Module implements ISerializable<Module> {
         if (settingsTag instanceof NbtCompound) settings.fromTag((NbtCompound) settingsTag);
 
         boolean active = tag.getBoolean("active");
-        if (active != isActive()) toggle(Utils.canUpdate());
-        setVisible(tag.getBoolean("visible"));
+        if (active != isActive()) toggle();
 
         return this;
-    }
-
-    public void toClipboard() {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            NbtIo.writeCompressed(toTag(), byteArrayOutputStream);
-            mc.keyboard.setClipboard(Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void fromClipboard() {
-        try {
-            byte[] data = Base64.getDecoder().decode(mc.keyboard.getClipboard());
-            ByteArrayInputStream bis = new ByteArrayInputStream(data);
-
-            NbtCompound pasted = NbtIo.readCompressed(new DataInputStream(bis));
-            NbtCompound current = this.toTag();
-
-            for (String key : current.getKeys()) if (!pasted.getKeys().contains(key)) return;
-            if (!pasted.getString("name").equals(current.getString("name"))) return;
-
-            this.fromTag(pasted);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -207,5 +162,10 @@ public abstract class Module implements ISerializable<Module> {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    @Override
+    public int compareTo(@NotNull Module o) {
+        return name.compareTo(o.name);
     }
 }

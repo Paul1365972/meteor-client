@@ -5,10 +5,11 @@
 
 package meteordevelopment.meteorclient.systems.modules.render;
 
-import meteordevelopment.meteorclient.events.entity.TookDamageEvent;
+import meteordevelopment.meteorclient.events.entity.DamageEvent;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
+import meteordevelopment.meteorclient.events.meteor.MouseScrollEvent;
 import meteordevelopment.meteorclient.events.world.ChunkOcclusionEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
@@ -17,11 +18,14 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.movement.GUIMove;
 import meteordevelopment.meteorclient.utils.misc.Vec3;
 import meteordevelopment.meteorclient.utils.misc.input.Input;
 import meteordevelopment.meteorclient.utils.misc.input.KeyAction;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.EventPriority;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
@@ -36,8 +40,18 @@ public class Freecam extends Module {
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
             .name("speed")
             .description("Your speed while in freecam.")
+            .onChanged(aDouble -> speedValue = aDouble)
             .defaultValue(1.0)
             .min(0.0)
+            .build()
+    );
+
+    private final Setting<Double> speedScrollSensitivity = sgGeneral.add(new DoubleSetting.Builder()
+            .name("speed-scroll-sensitivity")
+            .description("Allows you to change speed value using scroll wheel. 0 to disable.")
+            .defaultValue(0)
+            .min(0)
+            .sliderMax(2)
             .build()
     );
 
@@ -87,6 +101,7 @@ public class Freecam extends Module {
     public final Vec3 prevPos = new Vec3();
 
     private Perspective perspective;
+    private double speedValue;
 
     public float yaw, pitch;
     public float prevYaw, prevPitch;
@@ -103,6 +118,7 @@ public class Freecam extends Module {
         pitch = mc.player.getPitch();
 
         perspective = mc.options.getPerspective();
+        speedValue = speed.get();
 
         pos.set(mc.gameRenderer.getCamera().getPos());
         prevPos.set(mc.gameRenderer.getCamera().getPos());
@@ -150,14 +166,11 @@ public class Freecam extends Module {
         if (mc.cameraEntity.isInsideWall()) mc.getCameraEntity().noClip = true;
         if (!perspective.isFirstPerson()) mc.options.setPerspective(Perspective.FIRST_PERSON);
 
-        if (mc.currentScreen != null) return;
-
         Vec3d forward = Vec3d.fromPolar(0, yaw);
         Vec3d right = Vec3d.fromPolar(0, yaw + 90);
         double velX = 0;
         double velY = 0;
         double velZ = 0;
-
 
         if (rotate.get()) {
             BlockPos crossHairPos;
@@ -181,25 +194,25 @@ public class Freecam extends Module {
 
         boolean a = false;
         if (this.forward) {
-            velX += forward.x * s * speed.get();
-            velZ += forward.z * s * speed.get();
+            velX += forward.x * s * speedValue;
+            velZ += forward.z * s * speedValue;
             a = true;
         }
         if (this.backward) {
-            velX -= forward.x * s * speed.get();
-            velZ -= forward.z * s * speed.get();
+            velX -= forward.x * s * speedValue;
+            velZ -= forward.z * s * speedValue;
             a = true;
         }
 
         boolean b = false;
         if (this.right) {
-            velX += right.x * s * speed.get();
-            velZ += right.z * s * speed.get();
+            velX += right.x * s * speedValue;
+            velZ += right.z * s * speedValue;
             b = true;
         }
         if (this.left) {
-            velX -= right.x * s * speed.get();
-            velZ -= right.z * s * speed.get();
+            velX -= right.x * s * speedValue;
+            velZ -= right.z * s * speedValue;
             b = true;
         }
 
@@ -210,10 +223,10 @@ public class Freecam extends Module {
         }
 
         if (this.up) {
-            velY += s * speed.get();
+            velY += s * speedValue;
         }
         if (this.down) {
-            velY -= s * speed.get();
+            velY -= s * speedValue;
         }
 
         prevPos.set(pos);
@@ -221,28 +234,55 @@ public class Freecam extends Module {
     }
 
     @EventHandler
-    private void onKey(KeyEvent event) {
+    public void onKey(KeyEvent event) {
         if (Input.isKeyPressed(GLFW.GLFW_KEY_F3)) return;
+
+        // TODO: This is very bad but you all can cope :cope:
+        GUIMove guiMove = Modules.get().get(GUIMove.class);
+        if (mc.currentScreen != null && !guiMove.isActive()) return;
+        if (mc.currentScreen != null && guiMove.isActive() && guiMove.skip()) return;
 
         boolean cancel = true;
 
         if (mc.options.keyForward.matchesKey(event.key, 0) || mc.options.keyForward.matchesMouse(event.key)) {
             forward = event.action != KeyAction.Release;
-        } else if (mc.options.keyBack.matchesKey(event.key, 0) || mc.options.keyBack.matchesMouse(event.key)) {
+            mc.options.keyForward.setPressed(false);
+        }
+        else if (mc.options.keyBack.matchesKey(event.key, 0) || mc.options.keyBack.matchesMouse(event.key)) {
             backward = event.action != KeyAction.Release;
-        } else if (mc.options.keyRight.matchesKey(event.key, 0) || mc.options.keyRight.matchesMouse(event.key)) {
+            mc.options.keyBack.setPressed(false);
+        }
+        else if (mc.options.keyRight.matchesKey(event.key, 0) || mc.options.keyRight.matchesMouse(event.key)) {
             right = event.action != KeyAction.Release;
-        } else if (mc.options.keyLeft.matchesKey(event.key, 0) || mc.options.keyLeft.matchesMouse(event.key)) {
+            mc.options.keyRight.setPressed(false);
+        }
+        else if (mc.options.keyLeft.matchesKey(event.key, 0) || mc.options.keyLeft.matchesMouse(event.key)) {
             left = event.action != KeyAction.Release;
-        } else if (mc.options.keyJump.matchesKey(event.key, 0) || mc.options.keyJump.matchesMouse(event.key)) {
+            mc.options.keyLeft.setPressed(false);
+        }
+        else if (mc.options.keyJump.matchesKey(event.key, 0) || mc.options.keyJump.matchesMouse(event.key)) {
             up = event.action != KeyAction.Release;
-        } else if (mc.options.keySneak.matchesKey(event.key, 0) || mc.options.keySneak.matchesMouse(event.key)) {
+            mc.options.keyJump.setPressed(false);
+        }
+        else if (mc.options.keySneak.matchesKey(event.key, 0) || mc.options.keySneak.matchesMouse(event.key)) {
             down = event.action != KeyAction.Release;
-        } else {
+            mc.options.keySneak.setPressed(false);
+        }
+        else {
             cancel = false;
         }
 
         if (cancel) event.cancel();
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onMouseScroll(MouseScrollEvent event) {
+        if (speedScrollSensitivity.get() > 0) {
+            speedValue += event.value * 0.25 * (speedScrollSensitivity.get() * speedValue);
+            if (speedValue < 0.1) speedValue = 0.1;
+
+            event.cancel();
+        }
     }
 
     @EventHandler
@@ -251,7 +291,7 @@ public class Freecam extends Module {
     }
 
     @EventHandler
-    private void onTookDamage(TookDamageEvent event) {
+    private void onDamage(DamageEvent event) {
         if (event.entity.getUuid() == null) return;
         if (!event.entity.getUuid().equals(mc.player.getUuid())) return;
 

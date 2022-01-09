@@ -21,6 +21,7 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.settings.Settings;
 import meteordevelopment.meteorclient.systems.friends.Friend;
 import meteordevelopment.meteorclient.systems.friends.Friends;
+import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.client.gui.screen.Screen;
 
@@ -40,10 +41,10 @@ public class FriendsTab extends Tab {
     }
 
     private static class FriendsScreen extends WindowTabScreen {
+        private final Settings settings = new Settings();
+
         public FriendsScreen(GuiTheme theme, Tab tab) {
             super(theme, tab);
-
-            Settings settings = new Settings();
 
             SettingGroup sgGeneral = settings.getDefaultGroup();
 
@@ -66,13 +67,18 @@ public class FriendsTab extends Tab {
             );
 
             settings.onActivated();
+        }
+
+        @Override
+        public void initWidgets() {
+            // Settings
             add(theme.settings(settings)).expandX();
 
             // Friends
             WSection friends = add(theme.section("Friends")).expandX().widget();
             WTable table = friends.add(theme.table()).expandX().widget();
 
-            fillTable(table);
+            initTable(table);
 
             // New
             WHorizontalList list = friends.add(theme.horizontalList()).expandX().widget();
@@ -88,14 +94,14 @@ public class FriendsTab extends Tab {
                     nameW.set("");
 
                     table.clear();
-                    fillTable(table);
+                    initTable(table);
                 }
             };
 
             enterAction = add.action;
         }
 
-        private void fillTable(WTable table) {
+        private void initTable(WTable table) {
             for (Friend friend : Friends.get()) {
                 table.add(theme.label(friend.name));
 
@@ -104,11 +110,21 @@ public class FriendsTab extends Tab {
                     Friends.get().remove(friend);
 
                     table.clear();
-                    fillTable(table);
+                    initTable(table);
                 };
 
                 table.row();
             }
+        }
+
+        @Override
+        public boolean toClipboard() {
+            return NbtUtils.toClipboard(Friends.get());
+        }
+
+        @Override
+        public boolean fromClipboard() {
+            return NbtUtils.fromClipboard(Friends.get());
         }
     }
 }

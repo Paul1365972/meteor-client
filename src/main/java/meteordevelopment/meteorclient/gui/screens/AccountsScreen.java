@@ -15,10 +15,11 @@ import meteordevelopment.meteorclient.systems.accounts.Account;
 import meteordevelopment.meteorclient.systems.accounts.Accounts;
 import meteordevelopment.meteorclient.systems.accounts.MicrosoftLogin;
 import meteordevelopment.meteorclient.systems.accounts.types.MicrosoftAccount;
+import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import org.jetbrains.annotations.Nullable;
 
-import static meteordevelopment.meteorclient.utils.Utils.mc;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class AccountsScreen extends WindowScreen {
     public AccountsScreen(GuiTheme theme) {
@@ -38,6 +39,7 @@ public class AccountsScreen extends WindowScreen {
 
         addButton(l, "Cracked", () -> mc.setScreen(new AddCrackedAccountScreen(theme, this)));
         addButton(l, "Premium", () -> mc.setScreen(new AddPremiumAccountScreen(theme, this)));
+        addButton(l, "Altening", () -> mc.setScreen(new AddAlteningAccountScreen(theme, this)));
         addButton(l, "Microsoft", () -> {
             locked = true;
 
@@ -46,11 +48,10 @@ public class AccountsScreen extends WindowScreen {
 
                 if (refreshToken != null) {
                     MicrosoftAccount account = new MicrosoftAccount(refreshToken);
-                    addAccount(null, account);
+                    addAccount(null, this, account);
                 }
             });
         });
-        addButton(l, "The Altening", () -> mc.setScreen(new AddAlteningAccountScreen(theme, this)));
     }
 
     private void addButton(WContainer c, String text, Runnable action) {
@@ -58,11 +59,8 @@ public class AccountsScreen extends WindowScreen {
         button.action = action;
     }
 
-    public static void addAccount(@Nullable AddAccountScreen screen, Account<?> account) {
-        if (screen != null) {
-            screen.add.set("...");
-            screen.locked = true;
-        }
+    public static void addAccount(@Nullable AddAccountScreen screen, AccountsScreen parent, Account<?> account) {
+        if (screen != null) screen.locked = true;
 
         MeteorExecutor.execute(() -> {
             if (account.fetchInfo() && account.fetchHead()) {
@@ -72,16 +70,24 @@ public class AccountsScreen extends WindowScreen {
                 if (screen != null) {
                     screen.locked = false;
                     screen.onClose();
-                    screen.parent.reload();
                 }
+
+                parent.reload();
 
                 return;
             }
 
-            if (screen != null) {
-                screen.add.set("Add");
-                screen.locked = false;
-            }
+            if (screen != null) screen.locked = false;
         });
+    }
+
+    @Override
+    public boolean toClipboard() {
+        return NbtUtils.toClipboard(Accounts.get());
+    }
+
+    @Override
+    public boolean fromClipboard() {
+        return NbtUtils.fromClipboard(Accounts.get());
     }
 }

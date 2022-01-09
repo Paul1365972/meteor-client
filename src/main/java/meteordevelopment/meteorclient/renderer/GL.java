@@ -9,6 +9,8 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
 import meteordevelopment.meteorclient.mixin.BufferRendererAccessor;
 import meteordevelopment.meteorclient.mixininterface.ICapabilityTracker;
+import meteordevelopment.meteorclient.utils.Init;
+import meteordevelopment.meteorclient.utils.InitStage;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Matrix4f;
@@ -18,7 +20,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-import static meteordevelopment.meteorclient.utils.Utils.mc;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 import static org.lwjgl.opengl.GL32C.*;
 
 public class GL {
@@ -27,11 +29,13 @@ public class GL {
     private static final ICapabilityTracker DEPTH = getTracker("DEPTH");
     private static final ICapabilityTracker BLEND = getTracker("BLEND");
     private static final ICapabilityTracker CULL = getTracker("CULL");
+    private static final ICapabilityTracker SCISSOR = getTracker("SCISSOR");
 
-    private static boolean depthSaved, blendSaved, cullSaved;
+    private static boolean depthSaved, blendSaved, cullSaved, scissorSaved;
 
     private static boolean changeBufferRenderer = true;
 
+    @Init(stage = InitStage.Pre)
     public static void init() {
         if (FabricLoader.getInstance().isModLoaded("canvas")) changeBufferRenderer = false;
     }
@@ -66,6 +70,10 @@ public class GL {
 
     public static void deleteFramebuffer(int fbo) {
         GlStateManager._glDeleteFramebuffers(fbo);
+    }
+
+    public static void deleteProgram(int program) {
+        GlStateManager.glDeleteProgram(program);
     }
 
     // Binding
@@ -167,6 +175,18 @@ public class GL {
         glUniform2f(location, v1, v2);
     }
 
+    public static void uniformFloat3(int location, float v1, float v2, float v3) {
+        glUniform3f(location, v1, v2, v3);
+    }
+
+    public static void uniformFloat4(int location, float v1, float v2, float v3, float v4) {
+        glUniform4f(location, v1, v2, v3, v4);
+    }
+
+    public static void uniformFloat3Array(int location, float[] v) {
+        glUniform3fv(location, v);
+    }
+
     public static void uniformMatrix(int location, Matrix4f v) {
         v.writeColumnMajor(MAT);
         GlStateManager._glUniformMatrix4(location, false, MAT);
@@ -197,10 +217,19 @@ public class GL {
         pixelStore(GL_UNPACK_ALIGNMENT, 4);
     }
 
+    public static void generateMipmap(int target) {
+        glGenerateMipmap(target);
+    }
+
     // Framebuffers
 
     public static void framebufferTexture2D(int target, int attachment, int textureTarget, int texture, int level) {
         GlStateManager._glFramebufferTexture2D(target, attachment, textureTarget, texture, level);
+    }
+
+    public static void clear(int mask) {
+        GlStateManager._clearColor(0, 0, 0, 1);
+        GlStateManager._clear(mask,false);
     }
 
     // State
@@ -209,12 +238,14 @@ public class GL {
         depthSaved = DEPTH.get();
         blendSaved = BLEND.get();
         cullSaved = CULL.get();
+        scissorSaved = SCISSOR.get();
     }
 
     public static void restoreState() {
         DEPTH.set(depthSaved);
         BLEND.set(blendSaved);
         CULL.set(cullSaved);
+        SCISSOR.set(scissorSaved);
 
         disableLineSmooth();
     }
@@ -241,6 +272,13 @@ public class GL {
         GlStateManager._disableCull();
     }
 
+    public static void enableScissorTest() {
+        GlStateManager._enableScissorTest();
+    }
+    public static void disableScissorTest() {
+        GlStateManager._disableScissorTest();
+    }
+
     public static void enableLineSmooth() {
         glEnable(GL_LINE_SMOOTH);
         glLineWidth(1);
@@ -254,9 +292,16 @@ public class GL {
         mc.getTextureManager().bindTexture(id);
     }
 
-    public static void bindTexture(int i) {
-        GlStateManager._activeTexture(GL_TEXTURE0);
+    public static void bindTexture(int i, int slot) {
+        GlStateManager._activeTexture(GL_TEXTURE0 + slot);
         GlStateManager._bindTexture(i);
+    }
+    public static void bindTexture(int i) {
+        bindTexture(i, 0);
+    }
+
+    public static void resetTextureSlot() {
+        GlStateManager._activeTexture(GL_TEXTURE0);
     }
 
     private static ICapabilityTracker getTracker(String fieldName) {

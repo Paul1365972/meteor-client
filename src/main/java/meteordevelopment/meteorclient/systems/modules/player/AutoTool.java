@@ -11,6 +11,8 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.world.InfinityMiner;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
@@ -53,8 +55,8 @@ public class AutoTool extends Module {
         .name("anti-break-percentage")
         .description("The durability percentage to stop using a tool.")
         .defaultValue(10)
-        .min(1).max(100)
-        .sliderMax(50)
+        .range(1, 100)
+        .sliderRange(1, 100)
         .visible(antiBreak::get)
         .build()
     );
@@ -84,6 +86,8 @@ public class AutoTool extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
+        if (Modules.get().isActive(InfinityMiner.class)) return;
+
         if (switchBack.get() && !mc.options.keyAttack.isPressed() && wasPressed && InvUtils.previousSlot != -1) {
             InvUtils.swapBack();
             wasPressed = false;
@@ -102,6 +106,8 @@ public class AutoTool extends Module {
 
     @EventHandler(priority = EventPriority.HIGH)
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
+        if (Modules.get().isActive(InfinityMiner.class)) return;
+
         // Get blockState
         BlockState blockState = mc.world.getBlockState(event.blockPos);
         if (!BlockUtils.canBreak(event.blockPos, blockState)) return;
@@ -139,7 +145,7 @@ public class AutoTool extends Module {
     }
 
     private boolean shouldStopUsing(ItemStack itemStack) {
-        return antiBreak.get() && itemStack.getMaxDamage() - itemStack.getDamage() < breakDurability.get();
+        return antiBreak.get() && (itemStack.getMaxDamage() - itemStack.getDamage()) < (itemStack.getMaxDamage() * breakDurability.get() / 100);
     }
 
     public static double getScore(ItemStack itemStack, BlockState state, boolean silkTouchEnderChest, EnchantPreference enchantPreference, Predicate<ItemStack> good) {

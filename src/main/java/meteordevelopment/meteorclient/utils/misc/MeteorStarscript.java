@@ -5,8 +5,10 @@
 
 package meteordevelopment.meteorclient.utils.misc;
 
+import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.mixin.MinecraftClientAccessor;
-import meteordevelopment.meteorclient.systems.config.Config;
+import meteordevelopment.meteorclient.utils.Init;
+import meteordevelopment.meteorclient.utils.InitStage;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.world.TickRate;
@@ -30,18 +32,19 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 
-import static meteordevelopment.meteorclient.utils.Utils.mc;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class MeteorStarscript {
     public static Starscript ss = new Starscript();
 
+    @Init(stage = InitStage.Pre)
     public static void init() {
         StandardLib.init(ss);
 
         // General
-        ss.set("version", Value.string(Config.get().version != null ? (Config.get().devBuild.isEmpty() ? Config.get().version.toString() : Config.get().version + " " + Config.get().devBuild) : ""));
+        ss.set("version", Value.string(MeteorClient.version != null ? (MeteorClient.devBuild.isEmpty() ? MeteorClient.version.toString() : MeteorClient.version + " " + MeteorClient.devBuild) : ""));
         ss.set("mc_version", Value.string(SharedConstants.getGameVersion().getName()));
-        ss.set("fps", () -> Value.number(((MinecraftClientAccessor) mc).getFps()));
+        ss.set("fps", () -> Value.number(MinecraftClientAccessor.getFps()));
 
         // Player
         ss.set("player", Value.map(new ValueMap()

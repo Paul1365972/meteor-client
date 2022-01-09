@@ -21,11 +21,12 @@ import meteordevelopment.meteorclient.gui.widgets.pressable.WMinus;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WPlus;
 import meteordevelopment.meteorclient.systems.macros.Macro;
 import meteordevelopment.meteorclient.systems.macros.Macros;
+import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import net.minecraft.client.gui.screen.Screen;
 
-import static meteordevelopment.meteorclient.utils.Utils.mc;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class MacrosTab extends Tab {
     public MacrosTab() {
@@ -48,14 +49,7 @@ public class MacrosTab extends Tab {
         }
 
         @Override
-        protected void init() {
-            super.init();
-
-            clear();
-            initWidgets();
-        }
-
-        private void initWidgets() {
+        public void initWidgets() {
             // Macros
             if (Macros.get().getAll().size() > 0) {
                 WTable table = add(theme.table()).expandX().widget();
@@ -81,6 +75,16 @@ public class MacrosTab extends Tab {
             // New
             WButton create = add(theme.button("Create")).expandX().widget();
             create.action = () -> mc.setScreen(new MacroEditorScreen(theme, null));
+        }
+
+        @Override
+        public boolean toClipboard() {
+            return NbtUtils.toClipboard(Macros.get());
+        }
+
+        @Override
+        public boolean fromClipboard() {
+            return NbtUtils.fromClipboard(Macros.get());
         }
     }
 

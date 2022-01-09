@@ -19,12 +19,13 @@ import meteordevelopment.meteorclient.gui.widgets.pressable.WMinus;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WPlus;
 import meteordevelopment.meteorclient.systems.profiles.Profile;
 import meteordevelopment.meteorclient.systems.profiles.Profiles;
+import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import net.minecraft.client.gui.screen.Screen;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
-import static meteordevelopment.meteorclient.utils.Utils.mc;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class ProfilesTab extends Tab {
 
@@ -33,7 +34,7 @@ public class ProfilesTab extends Tab {
     }
 
     @Override
-    protected TabScreen createScreen(GuiTheme theme) {
+    public TabScreen createScreen(GuiTheme theme) {
         return new ProfilesScreen(theme, this);
     }
 
@@ -43,21 +44,12 @@ public class ProfilesTab extends Tab {
     }
 
     private static class ProfilesScreen extends WindowTabScreen {
-
         public ProfilesScreen(GuiTheme theme, Tab tab) {
             super(theme, tab);
         }
 
         @Override
-        protected void init() {
-            super.init();
-
-            initWidget();
-        }
-
-        private void initWidget() {
-            clear();
-
+        public void initWidgets() {
             WTable table = add(theme.table()).expandX().minWidth(300).widget();
 
             // Waypoints
@@ -75,13 +67,13 @@ public class ProfilesTab extends Tab {
 
                 // Edit
                 WButton edit = table.add(theme.button(GuiRenderer.EDIT)).widget();
-                edit.action = () -> mc.setScreen(new EditProfileScreen(theme, profile, this::initWidget));
+                edit.action = () -> mc.setScreen(new EditProfileScreen(theme, profile, this::reload));
 
                 // Remove
                 WMinus remove = table.add(theme.minus()).widget();
                 remove.action = () -> {
                     Profiles.get().remove(profile);
-                    initWidget();
+                    reload();
                 };
 
                 table.row();
@@ -92,7 +84,17 @@ public class ProfilesTab extends Tab {
 
             // Create
             WButton create = table.add(theme.button("Create")).expandX().widget();
-            create.action = () -> mc.setScreen(new EditProfileScreen(theme, null, this::initWidget));
+            create.action = () -> mc.setScreen(new EditProfileScreen(theme, null, this::reload));
+        }
+
+        @Override
+        public boolean toClipboard() {
+            return NbtUtils.toClipboard(Profiles.get());
+        }
+
+        @Override
+        public boolean fromClipboard() {
+            return NbtUtils.fromClipboard(Profiles.get());
         }
     }
 
