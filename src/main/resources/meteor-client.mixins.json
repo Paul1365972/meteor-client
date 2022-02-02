@@ -144,6 +144,7 @@
     "TextHandlerAccessor",
     "TextVisitFactoryMixin",
     "TitleScreenMixin",
+    "TooltipComponentMixin",
     "TridentItemMixin",
     "Vec3dMixin",
     "WorldAccessor",
