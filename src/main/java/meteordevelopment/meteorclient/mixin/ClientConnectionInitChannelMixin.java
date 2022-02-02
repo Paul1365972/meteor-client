@@ -19,7 +19,7 @@ import java.net.InetSocketAddress;
 
 @Mixin(targets = "net.minecraft.network.ClientConnection$1")
 public class ClientConnectionInitChannelMixin {
-    @Inject(method = "initChannel", at = @At("HEAD"))
+    @Inject(method = "initChannel(Lio/netty/channel/Channel;)V", at = @At("HEAD"))
     private void onInitChannel(Channel channel, CallbackInfo info) {
         Proxy proxy = Proxies.get().getEnabled();
         if (proxy == null) return;
