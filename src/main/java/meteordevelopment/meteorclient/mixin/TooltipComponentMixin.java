@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(TooltipComponent.class)
-public class TooltipComponentMixin {
+public interface TooltipComponentMixin {
 
     @Inject(method = "of(Lnet/minecraft/client/item/TooltipData;)Lnet/minecraft/client/gui/tooltip/TooltipComponent;", at = @At("HEAD"), cancellable = true)
     private static void onComponentConstruct(TooltipData data, CallbackInfoReturnable<TooltipComponent> cir) {
