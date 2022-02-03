@@ -22,10 +22,12 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringHelper;
-import org.apache.commons.lang3.text.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
@@ -75,8 +77,12 @@ public class Names {
     }
 
     public static String get(ParticleType<?> type) {
-        if (!(type instanceof ParticleEffect)) return "";
-        return particleTypesNames.computeIfAbsent(type, effect1 -> WordUtils.capitalize(((ParticleEffect) effect1).asString().substring(10).replace("_", " ")));
+        if (type instanceof ParticleEffect effect)
+            return particleTypesNames.computeIfAbsent(type, value -> {
+                String path = new Identifier(effect.asString()).getPath().replace('_', ' ');
+                return Stream.of(path.split("\\s")).map(StringUtils::capitalize).collect(Collectors.joining(" "));
+            });
+        return "";
     }
 
     public static String getSoundName(Identifier id) {

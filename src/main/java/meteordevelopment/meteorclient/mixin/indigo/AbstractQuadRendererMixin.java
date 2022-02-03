@@ -13,7 +13,6 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractQuadRender
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Matrix3f;
 import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.math.Vec3f;
@@ -36,8 +35,7 @@ public abstract class AbstractQuadRendererMixin {
     @Shadow protected abstract Matrix4f matrix();
     @Shadow protected abstract int overlay();
 
-    @SuppressWarnings("UnresolvedMixinReference")
-    @Inject(method = "bufferQuad(Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;Lnet/minecraft/class_1921;)V",
+    @Inject(method = "bufferQuad(Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;Lnet/minecraft/client/render/RenderLayer;)V",
     at = @At("HEAD"), cancellable = true, remap = false)
     private void onBufferQuad(MutableQuadViewImpl quad, RenderLayer renderLayer, CallbackInfo ci) {
         WallHack wallHack = Modules.get().get(WallHack.class);
