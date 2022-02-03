@@ -48,7 +48,7 @@ public class ItemPhysics extends Module {
 
         if (event.itemEntity.getStack().getItem() instanceof BlockItem && !(event.itemEntity.getStack().getItem() instanceof AliasedBlockItem)) {
             Block b = ((BlockItem) event.itemEntity.getStack().getItem()).getBlock();
-            VoxelShape shape = b.getOutlineShape(b.getDefaultState(), event.itemEntity.world, event.itemEntity.getBlockPos(), ShapeContext.absent());
+            VoxelShape shape = b.getDefaultState().getOutlineShape(event.itemEntity.world, event.itemEntity.getBlockPos(), ShapeContext.absent());
 
             if (shape.getMax(Direction.Axis.Y) <= .5) renderBlockFlat = true;
         }

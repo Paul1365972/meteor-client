@@ -207,7 +207,7 @@ public class Notifier extends Module {
     }
 
     private int getChatId(Entity entity) {
-        return chatIdMap.computeIntIfAbsent(entity.getUuid(), value -> random.nextInt());
+        return chatIdMap.computeIfAbsent(entity.getUuid(), value -> random.nextInt());
     }
 
     public enum Event {
