@@ -1,6 +1,6 @@
 /*
- * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client/).
- * Copyright (c) 2021 Meteor Development.
+ * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client).
+ * Copyright (c) Meteor Development.
  */
 
 package meteordevelopment.meteorclient.mixin;
@@ -30,6 +30,9 @@ import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.network.encryption.PlayerPublicKey;
+import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -43,12 +46,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity {
     @Shadow @Final public ClientPlayNetworkHandler networkHandler;
 
+    @Shadow
+    public abstract void sendChatMessage(String message, @Nullable Text preview);
+
     private boolean ignoreChatMessage;
 
-    @Shadow public abstract void sendChatMessage(String string);
-
-    public ClientPlayerEntityMixin(ClientWorld world, GameProfile profile) {
-        super(world, profile);
+    public ClientPlayerEntityMixin(ClientWorld world, GameProfile profile, @Nullable PlayerPublicKey publicKey) {
+        super(world, profile, publicKey);
     }
 
     @Inject(method = "dropSelectedItem", at = @At("HEAD"), cancellable = true)
@@ -56,8 +60,8 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
         if (MeteorClient.EVENT_BUS.post(DropItemsEvent.get(getMainHandStack())).isCancelled()) info.setReturnValue(false);
     }
 
-    @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
-    private void onSendChatMessage(String message, CallbackInfo info) {
+    @Inject(method = "sendChatMessage(Ljava/lang/String;Lnet/minecraft/text/Text;)V", at = @At("HEAD"), cancellable = true)
+    private void onSendChatMessage(String message, Text preview, CallbackInfo info) {
         if (ignoreChatMessage) return;
 
         if (!message.startsWith(Config.get().prefix.get()) && !message.startsWith("/") && !message.startsWith(BaritoneAPI.getSettings().prefix.value)) {
@@ -65,7 +69,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
 
             if (!event.isCancelled()) {
                 ignoreChatMessage = true;
-                sendChatMessage(event.message);
+                sendChatMessage(event.message, preview);
                 ignoreChatMessage = false;
             }
 
@@ -104,7 +108,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
     @Inject(method = "shouldSlowDown", at = @At("HEAD"), cancellable = true)
     private void onShouldSlowDown(CallbackInfoReturnable<Boolean> info) {
         if (Modules.get().get(NoSlow.class).sneaking()) {
-            info.setReturnValue(shouldLeaveSwimmingPose());
+            info.setReturnValue(isCrawling());
         }
     }
 

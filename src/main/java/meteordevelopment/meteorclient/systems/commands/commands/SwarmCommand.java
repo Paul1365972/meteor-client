@@ -1,6 +1,6 @@
 /*
- * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client/).
- * Copyright (c) 2021 Meteor Development.
+ * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client).
+ * Copyright (c) Meteor Development.
  */
 
 package meteordevelopment.meteorclient.systems.commands.commands;
@@ -13,6 +13,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import meteordevelopment.meteorclient.systems.commands.Command;
+import meteordevelopment.meteorclient.systems.commands.Commands;
 import meteordevelopment.meteorclient.systems.commands.arguments.ModuleArgumentType;
 import meteordevelopment.meteorclient.systems.commands.arguments.PlayerArgumentType;
 import meteordevelopment.meteorclient.systems.modules.Module;
@@ -26,7 +27,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.BlockStateArgument;
 import net.minecraft.command.argument.BlockStateArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 
 import java.util.List;
 import java.util.Random;
@@ -35,7 +36,7 @@ import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public class SwarmCommand extends Command {
 
-    private final static SimpleCommandExceptionType SWARM_NOT_ACTIVE = new SimpleCommandExceptionType(new LiteralText("The swarm module must be active to use this command."));
+    private final static SimpleCommandExceptionType SWARM_NOT_ACTIVE = new SimpleCommandExceptionType(Text.literal("The swarm module must be active to use this command."));
 
     public SwarmCommand() {
         super("swarm", "Sends commands to connected swarm workers.");
@@ -114,8 +115,8 @@ public class SwarmCommand extends Command {
             }
 
             return SINGLE_SUCCESS;
-        }).then(argument("player", PlayerArgumentType.player()).executes(context -> {
-            PlayerEntity playerEntity = PlayerArgumentType.getPlayer(context);
+        }).then(argument("player", PlayerArgumentType.create()).executes(context -> {
+            PlayerEntity playerEntity = PlayerArgumentType.get(context);
 
             Swarm swarm = Modules.get().get(Swarm.class);
             if (swarm.isActive()) {
@@ -171,7 +172,7 @@ public class SwarmCommand extends Command {
             }
             return SINGLE_SUCCESS;
         })
-        .then(argument("target", BlockStateArgumentType.blockState()).executes(context -> {
+        .then(argument("target", BlockStateArgumentType.blockState(Commands.REGISTRY_ACCESS)).executes(context -> {
             Swarm swarm = Modules.get().get(Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
@@ -187,7 +188,7 @@ public class SwarmCommand extends Command {
             }
             return SINGLE_SUCCESS;
         })
-        .then(argument("repair", BlockStateArgumentType.blockState()).executes(context -> {
+        .then(argument("repair", BlockStateArgumentType.blockState(Commands.REGISTRY_ACCESS)).executes(context -> {
             Swarm swarm = Modules.get().get(Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
@@ -234,7 +235,7 @@ public class SwarmCommand extends Command {
         }))));
 
         builder.then(literal("mine")
-                .then(argument("block", BlockStateArgumentType.blockState()).executes(context -> {
+                .then(argument("block", BlockStateArgumentType.blockState(Commands.REGISTRY_ACCESS)).executes(context -> {
                     Swarm swarm = Modules.get().get(Swarm.class);
                     if (swarm.isActive()) {
                         if (swarm.isHost()) {
@@ -250,14 +251,14 @@ public class SwarmCommand extends Command {
         );
 
         builder.then(literal("toggle")
-                .then(argument("module", ModuleArgumentType.module())
+                .then(argument("module", ModuleArgumentType.create())
                         .executes(context -> {
                             Swarm swarm = Modules.get().get(Swarm.class);
                             if (swarm.isActive()) {
                                 if (swarm.isHost()) {
                                     swarm.host.sendMessage(context.getInput());
                                 } else if (swarm.isWorker()) {
-                                    Module module = ModuleArgumentType.getModule(context, "module");
+                                    Module module = ModuleArgumentType.get(context);
                                     module.toggle();
                                 }
                             } else {
@@ -271,7 +272,7 @@ public class SwarmCommand extends Command {
                                         if (swarm.isHost()) {
                                             swarm.host.sendMessage(context.getInput());
                                         } else if (swarm.isWorker()) {
-                                            Module m = ModuleArgumentType.getModule(context, "module");
+                                            Module m = ModuleArgumentType.get(context);
                                             if (!m.isActive()) m.toggle();
                                         }
                                     } else {
@@ -285,7 +286,7 @@ public class SwarmCommand extends Command {
                                         if (swarm.isHost()) {
                                             swarm.host.sendMessage(context.getInput());
                                         } else if (swarm.isWorker()) {
-                                            Module m = ModuleArgumentType.getModule(context, "module");
+                                            Module m = ModuleArgumentType.get(context);
                                             if (m.isActive()) m.toggle();
                                         }
                                     } else {
@@ -343,7 +344,7 @@ public class SwarmCommand extends Command {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput());
                 } else if (swarm.isWorker()) {
-                    mc.player.sendChatMessage(StringArgumentType.getString(context, "command"));
+                    ChatUtils.sendPlayerMsg(StringArgumentType.getString(context, "command"));
                 }
             } else {
                 throw SWARM_NOT_ACTIVE.create();
