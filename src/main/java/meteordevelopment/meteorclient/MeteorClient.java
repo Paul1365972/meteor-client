@@ -43,18 +43,25 @@ import java.lang.invoke.MethodHandles;
 
 public class MeteorClient implements ClientModInitializer {
     public static final String MOD_ID = "meteor-client";
-    public static final ModMetadata MOD_META = FabricLoader.getInstance().getModContainer(MOD_ID).get().getMetadata();
-    public final static Version VERSION;
-    public final static String DEV_BUILD;
+    public static final ModMetadata MOD_META;
+    public static final String NAME;
+    public static final  Version VERSION;
+    public static final  String DEV_BUILD;
+
+    public static MeteorClient INSTANCE;
     public static MeteorAddon ADDON;
 
     public static MinecraftClient mc;
-    public static MeteorClient INSTANCE;
     public static final IEventBus EVENT_BUS = new EventBus();
-    public static final File FOLDER = new File(FabricLoader.getInstance().getGameDir().toString(), MOD_ID);
-    public static final Logger LOG = LoggerFactory.getLogger("Meteor Client");
+    public static final File FOLDER = FabricLoader.getInstance().getGameDir().resolve(MOD_ID).toFile();
+    public static final Logger LOG;
 
     static {
+        MOD_META = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow().getMetadata();
+
+        NAME = MOD_META.getName();
+        LOG = LoggerFactory.getLogger(NAME);
+
         String versionString = MOD_META.getVersion().getFriendlyString();
         if (versionString.contains("-")) versionString = versionString.split("-")[0];
 
@@ -69,7 +76,7 @@ public class MeteorClient implements ClientModInitializer {
             return;
         }
 
-        LOG.info("Initializing Meteor Client");
+        LOG.info("Initializing {}", NAME);
 
         // Global minecraft client accessor
         mc = MinecraftClient.getInstance();
@@ -90,9 +97,7 @@ public class MeteorClient implements ClientModInitializer {
             try {
                 EVENT_BUS.registerLambdaFactory(addon.getPackage(), (lookupInMethod, klass) -> (MethodHandles.Lookup) lookupInMethod.invoke(null, klass, MethodHandles.lookup()));
             } catch (AbstractMethodError e) {
-                AbstractMethodError exception = new AbstractMethodError("Addon \"%s\" is too old and cannot be ran.".formatted(addon.name));
-                exception.addSuppressed(e);
-                throw exception;
+                throw new RuntimeException("Addon \"%s\" is too old and cannot be ran.".formatted(addon.name), e);
             }
         });
 
@@ -140,19 +145,20 @@ public class MeteorClient implements ClientModInitializer {
     @EventHandler
     private void onKey(KeyEvent event) {
         if (event.action == KeyAction.Press && KeyBinds.OPEN_GUI.matchesKey(event.key, 0)) {
-            openGui();
+            toggleGui();
         }
     }
 
     @EventHandler
     private void onMouseButton(MouseButtonEvent event) {
         if (event.action == KeyAction.Press && KeyBinds.OPEN_GUI.matchesMouse(event.button)) {
-            openGui();
+            toggleGui();
         }
     }
 
-    private void openGui() {
-        if (Utils.canOpenGui()) Tabs.get().get(0).openScreen(GuiThemes.get());
+    private void toggleGui() {
+        if (Utils.canCloseGui()) mc.currentScreen.close();
+        else if (Utils.canOpenGui()) Tabs.get().get(0).openScreen(GuiThemes.get());
     }
 
     // Hide HUD

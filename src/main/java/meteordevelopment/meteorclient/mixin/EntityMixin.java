@@ -11,17 +11,21 @@ import meteordevelopment.meteorclient.events.entity.player.JumpVelocityMultiplie
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.combat.Hitboxes;
+import meteordevelopment.meteorclient.systems.modules.movement.NoFall;
 import meteordevelopment.meteorclient.systems.modules.movement.NoSlow;
 import meteordevelopment.meteorclient.systems.modules.movement.Velocity;
+import meteordevelopment.meteorclient.systems.modules.movement.elytrafly.ElytraFly;
 import meteordevelopment.meteorclient.systems.modules.render.ESP;
 import meteordevelopment.meteorclient.systems.modules.render.NoRender;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
+import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.postprocess.PostProcessShaders;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -103,7 +107,8 @@ public abstract class EntityMixin {
     @Inject(method = "getTeamColorValue", at = @At("HEAD"), cancellable = true)
     private void onGetTeamColorValue(CallbackInfoReturnable<Integer> info) {
         if (PostProcessShaders.rendering) {
-            info.setReturnValue(Modules.get().get(ESP.class).getColor((Entity) (Object) this).getPacked());
+            Color color = Modules.get().get(ESP.class).getColor((Entity) (Object) this);
+            if (color != null) info.setReturnValue(color.getPacked());
         }
     }
 
@@ -121,6 +126,11 @@ public abstract class EntityMixin {
         if (Modules.get().get(NoRender.class).noInvisibility() || !Modules.get().get(ESP.class).shouldSkip((Entity) (Object) this)) info.setReturnValue(false);
     }
 
+    @Inject(method = "isGlowing", at = @At("HEAD"), cancellable = true)
+    private void isGlowing(CallbackInfoReturnable<Boolean> info) {
+        if (Modules.get().get(NoRender.class).noGlowing()) info.setReturnValue(false);
+    }
+
     @Inject(method = "getTargetingMargin", at = @At("HEAD"), cancellable = true)
     private void onGetTargetingMargin(CallbackInfoReturnable<Float> info) {
         double v = Modules.get().get(Hitboxes.class).getEntityValue((Entity) (Object) this);
@@ -130,5 +140,17 @@ public abstract class EntityMixin {
     @Inject(method = "isInvisibleTo", at = @At("HEAD"), cancellable = true)
     private void onIsInvisibleTo(PlayerEntity player, CallbackInfoReturnable<Boolean> info) {
         if (player == null) info.setReturnValue(false);
+    }
+
+    @Inject(method = "getPose", at = @At("HEAD"), cancellable = true)
+    private void getPoseHook(CallbackInfoReturnable<EntityPose> info) {
+        if ((Object) this == mc.player && Modules.get().get(ElytraFly.class).canPacketEfly()) {
+            info.setReturnValue(EntityPose.FALL_FLYING);
+        }
+    }
+
+    @Inject(method = "bypassesLandingEffects", at = @At("RETURN"), cancellable = true)
+    private void cancelBounce(CallbackInfoReturnable<Boolean> cir) {
+        cir.setReturnValue(Modules.get().get(NoFall.class).cancelBounce() || cir.getReturnValue());
     }
 }

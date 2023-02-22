@@ -15,7 +15,6 @@
     <br>
     <img src="https://img.shields.io/github/languages/code-size/MeteorDevelopment/meteor-client" alt="GitHub code size in bytes"/>
     <img src="https://tokei.rs/b1/github/MeteorDevelopment/meteor-client" alt="GitHub lines of code"/>
-    <img src="https://www.codefactor.io/repository/github/meteordevelopment/meteor-client/badge" alt="CodeFactor"/>
 </div>
 
 ## Usage
@@ -44,7 +43,7 @@ Please provide as much information as you can to best help us understand your is
 All of our work is completely free and non-profit, therefore we are very grateful for all donations made to help support us in running our community.  
 All of the money made through donations is used to pay for our servers, none of it is taken for profit.
 
-Donations can be made via our [website](https://meteorclient.com/donations) and the minimum amount to get donor benefits is €5.  
+Donations can be made via our [website](https://meteorclient.com/donate) and the minimum amount to get donor benefits is €5.  
 You will be rewarded with a role on our Discord server, an in-game cape, and an extra kit as well as donor status on our [PvP server](https://namemc.com/server/pvp.meteorclient.com).  
 ⚠️ _Make sure to create a Meteor account and link your Discord and Minecraft accounts to fully experience your rewards._ ⚠️
 

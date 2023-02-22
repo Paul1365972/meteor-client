@@ -25,8 +25,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ArrowItem;
-import net.minecraft.item.BowItem;
-import net.minecraft.item.CrossbowItem;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.Vec3d;
 
 public class BowAimbot extends Module {
@@ -98,7 +97,7 @@ public class BowAimbot extends Module {
         target = TargetUtils.get(entity -> {
             if (entity == mc.player || entity == mc.cameraEntity) return false;
             if ((entity instanceof LivingEntity && ((LivingEntity) entity).isDead()) || !entity.isAlive()) return false;
-            if (entity.distanceTo(mc.player) > range.get()) return false;
+            if (!PlayerUtils.isWithin(entity, range.get())) return false;
             if (!entities.get().getBoolean(entity.getType())) return false;
             if (!nametagged.get() && entity.hasCustomName()) return false;
             if (!PlayerUtils.canSeeEntity(entity)) return false;
@@ -127,7 +126,7 @@ public class BowAimbot extends Module {
     }
 
     private boolean itemInHand() {
-        return mc.player.getMainHandStack().getItem() instanceof BowItem || mc.player.getMainHandStack().getItem() instanceof CrossbowItem;
+        return InvUtils.testInMainHand(Items.BOW, Items.CROSSBOW);
     }
 
     private void aim(double tickDelta) {

@@ -18,29 +18,31 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReflectInit {
-    private static final List<String> packages = new ArrayList<>();
+    private static final List<Reflections> reflections = new ArrayList<>();
 
     public static void registerPackages() {
-        packages.add(MeteorClient.ADDON.getPackage());
+        add(MeteorClient.ADDON);
+
         for (MeteorAddon addon : AddonManager.ADDONS) {
             try {
-                String pkg = addon.getPackage();
-                if (pkg != null && !pkg.isBlank()) {
-                    packages.add(pkg);
-                }
+                add(addon);
             } catch (AbstractMethodError e) {
-                AbstractMethodError exception = new AbstractMethodError("Addon \"%s\" is too old and cannot be ran.".formatted(addon.name));
-                exception.addSuppressed(e);
-                throw exception;
+                throw new RuntimeException("Addon \"%s\" is too old and cannot be ran.".formatted(addon.name), e);
             }
         }
     }
 
+    private static void add(MeteorAddon addon) {
+        String pkg = addon.getPackage();
+        if (pkg == null || pkg.isBlank()) return;
+        reflections.add(new Reflections(pkg, Scanners.MethodsAnnotated));
+    }
+
     public static void init(Class<? extends Annotation> annotation) {
-        for (String pkg : packages) {
-            Reflections reflections = new Reflections(pkg, Scanners.MethodsAnnotated);
-            Set<Method> initTasks = reflections.getMethodsAnnotatedWith(annotation);
+        for (Reflections reflection : reflections) {
+            Set<Method> initTasks = reflection.getMethodsAnnotatedWith(annotation);
             if (initTasks == null) return;
+
             Map<Class<?>, List<Method>> byClass = initTasks.stream().collect(Collectors.groupingBy(Method::getDeclaringClass));
             Set<Method> left = new HashSet<>(initTasks);
 
@@ -66,9 +68,7 @@ public class ReflectInit {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         } catch (NullPointerException e) {
-            RuntimeException exception = new IllegalStateException("Method \"%s\" using Init annotations from non-static context".formatted(task.getName()));
-            exception.addSuppressed(e);
-            throw exception;
+            throw new RuntimeException("Method \"%s\" using Init annotations from non-static context".formatted(task.getName()), e);
         }
     }
 

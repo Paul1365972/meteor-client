@@ -5,6 +5,7 @@
 
 package meteordevelopment.meteorclient.systems.hud.elements;
 
+import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.gui.utils.StarscriptTextBoxRenderer;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.hud.Hud;
@@ -40,7 +41,7 @@ public class TextHud extends HudElement {
     public final Setting<String> text = sgGeneral.add(new StringSetting.Builder()
         .name("text")
         .description("Text to display with Starscript.")
-        .defaultValue("Meteor Client")
+        .defaultValue(MeteorClient.NAME)
         .onChanged(s -> recompile())
         .wide()
         .renderer(StarscriptTextBoxRenderer.class)
@@ -220,7 +221,8 @@ public class TextHud extends HudElement {
 
         if (shown.get() != Shown.Always && conditionScript != null) {
             String text = MeteorStarscript.run(conditionScript);
-            visible = shown.get() == Shown.WhenTrue ? text.equalsIgnoreCase("true") : text.equalsIgnoreCase("false");
+            if (text == null) visible = false;
+            else visible = shown.get() == Shown.WhenTrue ? text.equalsIgnoreCase("true") : text.equalsIgnoreCase("false");
         }
 
         firstTick = false;

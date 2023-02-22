@@ -11,10 +11,11 @@ import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.renderer.Renderer2D;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.config.Config;
+import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.entity.EntityUtils;
-import meteordevelopment.meteorclient.utils.misc.Vec3;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.NametagUtils;
 import meteordevelopment.meteorclient.utils.render.WireframeEntityRenderer;
@@ -26,6 +27,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
+import org.joml.Vector3d;
 
 public class ESP extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -50,6 +52,17 @@ public class ESP extends Module {
         .build()
     );
 
+    public final Setting<Double> glowMultiplier = sgGeneral.add(new DoubleSetting.Builder()
+        .name("glow-multiplier")
+        .description("Multiplier for glow effect")
+        .visible(() -> mode.get() == Mode.Shader)
+        .decimalPlaces(3)
+        .defaultValue(3.5)
+        .min(0)
+        .sliderMax(10)
+        .build()
+    );
+
     public final Setting<Boolean> ignoreSelf = sgGeneral.add(new BoolSetting.Builder()
         .name("ignore-self")
         .description("Ignores yourself drawing the shader.")
@@ -68,7 +81,7 @@ public class ESP extends Module {
         .name("fill-opacity")
         .description("The opacity of the shape fill.")
         .visible(() -> shapeMode.get() != ShapeMode.Lines)
-        .defaultValue(0.8)
+        .defaultValue(0.3)
         .range(0, 1)
         .sliderMax(1)
         .build()
@@ -92,10 +105,26 @@ public class ESP extends Module {
 
     // Colors
 
+    public final Setting<Boolean> distance = sgColors.add(new BoolSetting.Builder()
+        .name("distance-colors")
+        .description("Changes the color of tracers depending on distance.")
+        .defaultValue(false)
+        .build()
+    );
+
+    public final Setting<Boolean> friendOverride = sgColors.add(new BoolSetting.Builder()
+        .name("show-friend-colors")
+        .description("Whether or not to override the distance color of friends with the friend color.")
+        .defaultValue(true)
+        .visible(distance::get)
+        .build()
+    );
+
     private final Setting<SettingColor> playersColor = sgColors.add(new ColorSetting.Builder()
         .name("players-color")
         .description("The other player's color.")
         .defaultValue(new SettingColor(255, 255, 255))
+        .visible(() -> !distance.get())
         .build()
     );
 
@@ -103,6 +132,7 @@ public class ESP extends Module {
         .name("animals-color")
         .description("The animal's color.")
         .defaultValue(new SettingColor(25, 255, 25, 255))
+        .visible(() -> !distance.get())
         .build()
     );
 
@@ -110,6 +140,7 @@ public class ESP extends Module {
         .name("water-animals-color")
         .description("The water animal's color.")
         .defaultValue(new SettingColor(25, 25, 255, 255))
+        .visible(() -> !distance.get())
         .build()
     );
 
@@ -117,6 +148,7 @@ public class ESP extends Module {
         .name("monsters-color")
         .description("The monster's color.")
         .defaultValue(new SettingColor(255, 25, 25, 255))
+        .visible(() -> !distance.get())
         .build()
     );
 
@@ -124,6 +156,7 @@ public class ESP extends Module {
         .name("ambient-color")
         .description("The ambient's color.")
         .defaultValue(new SettingColor(25, 25, 25, 255))
+        .visible(() -> !distance.get())
         .build()
     );
 
@@ -131,6 +164,7 @@ public class ESP extends Module {
         .name("misc-color")
         .description("The misc color.")
         .defaultValue(new SettingColor(175, 175, 175, 255))
+        .visible(() -> !distance.get())
         .build()
     );
 
@@ -138,9 +172,9 @@ public class ESP extends Module {
     private final Color sideColor = new Color();
     private final Color baseColor = new Color();
 
-    private final Vec3 pos1 = new Vec3();
-    private final Vec3 pos2 = new Vec3();
-    private final Vec3 pos = new Vec3();
+    private final Vector3d pos1 = new Vector3d();
+    private final Vector3d pos2 = new Vector3d();
+    private final Vector3d pos = new Vector3d();
 
     private int count;
 
@@ -166,8 +200,10 @@ public class ESP extends Module {
 
     private void drawBoundingBox(Render3DEvent event, Entity entity) {
         Color color = getColor(entity);
-        lineColor.set(color);
-        sideColor.set(color).a((int) (sideColor.a * fillOpacity.get()));
+        if (color != null) {
+            lineColor.set(color);
+            sideColor.set(color).a((int) (sideColor.a * fillOpacity.get()));
+        }
 
         if (mode.get() == Mode.Box) {
             double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX()) - entity.getX();
@@ -176,8 +212,7 @@ public class ESP extends Module {
 
             Box box = entity.getBoundingBox();
             event.renderer.box(x + box.minX, y + box.minY, z + box.minZ, x + box.maxX, y + box.maxY, z + box.maxZ, sideColor, lineColor, shapeMode.get(), 0);
-        }
-        else {
+        } else {
             WireframeEntityRenderer.render(event, entity, 1, sideColor, lineColor, shapeMode.get());
         }
     }
@@ -218,8 +253,10 @@ public class ESP extends Module {
 
             // Setup color
             Color color = getColor(entity);
-            lineColor.set(color);
-            sideColor.set(color).a((int) (sideColor.a * fillOpacity.get()));
+            if (color != null) {
+                lineColor.set(color);
+                sideColor.set(color).a((int) (sideColor.a * fillOpacity.get()));
+            }
 
             // Render
             if (shapeMode.get() != ShapeMode.Lines && sideColor.a > 0) {
@@ -239,7 +276,7 @@ public class ESP extends Module {
         Renderer2D.COLOR.render(null);
     }
 
-    private boolean checkCorner(double x, double y, double z, Vec3 min, Vec3 max) {
+    private boolean checkCorner(double x, double y, double z, Vector3d min, Vector3d max) {
         pos.set(x, y, z);
         if (!NametagUtils.to2D(pos, 1)) return true;
 
@@ -261,7 +298,8 @@ public class ESP extends Module {
     public boolean shouldSkip(Entity entity) {
         if (!entities.get().getBoolean(entity.getType())) return true;
         if (entity == mc.player && ignoreSelf.get()) return true;
-        return !EntityUtils.isInRenderDistance(entity) || getFadeAlpha(entity) == 0;
+        if (entity == mc.cameraEntity && mc.options.getPerspective().isFirstPerson()) return true;
+        return !EntityUtils.isInRenderDistance(entity);
     }
 
     public Color getColor(Entity entity) {
@@ -284,15 +322,21 @@ public class ESP extends Module {
     }
 
     public Color getEntityTypeColor(Entity entity) {
-        if (entity instanceof PlayerEntity) return PlayerUtils.getPlayerColor(((PlayerEntity) entity), playersColor.get());
-
-        return switch (entity.getType().getSpawnGroup()) {
-            case CREATURE -> animalsColor.get();
-            case WATER_AMBIENT, WATER_CREATURE, UNDERGROUND_WATER_CREATURE, AXOLOTLS -> waterAnimalsColor.get();
-            case MONSTER -> monstersColor.get();
-            case AMBIENT -> ambientColor.get();
-            default -> miscColor.get();
-        };
+        if (distance.get()) {
+            if (friendOverride.get() && entity instanceof PlayerEntity && Friends.get().isFriend((PlayerEntity) entity)) {
+                return Config.get().friendColor.get();
+            } else return EntityUtils.getColorFromDistance(entity);
+        } else if (entity instanceof PlayerEntity) {
+            return PlayerUtils.getPlayerColor(((PlayerEntity) entity), playersColor.get());
+        } else {
+            return switch (entity.getType().getSpawnGroup()) {
+                case CREATURE -> animalsColor.get();
+                case WATER_AMBIENT, WATER_CREATURE, UNDERGROUND_WATER_CREATURE, AXOLOTLS -> waterAnimalsColor.get();
+                case MONSTER -> monstersColor.get();
+                case AMBIENT -> ambientColor.get();
+                default -> miscColor.get();
+            };
+        }
     }
 
     @Override

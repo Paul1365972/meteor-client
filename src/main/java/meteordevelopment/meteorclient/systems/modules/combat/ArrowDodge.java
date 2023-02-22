@@ -12,7 +12,6 @@ import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.entity.ProjectileEntitySimulator;
 import meteordevelopment.meteorclient.utils.misc.Pool;
-import meteordevelopment.meteorclient.utils.misc.Vec3;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ArrowEntity;
@@ -20,6 +19,7 @@ import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import org.joml.Vector3d;
 
 import java.util.*;
 
@@ -29,14 +29,14 @@ public class ArrowDodge extends Module {
 
     private final Setting<MoveType> moveType = sgMovement.add(new EnumSetting.Builder<MoveType>()
         .name("move-type")
-        .description("The way you are moved by this module")
+        .description("The way you are moved by this module.")
         .defaultValue(MoveType.Velocity)
         .build()
     );
 
     private final Setting<Double> moveSpeed = sgMovement.add(new DoubleSetting.Builder()
         .name("move-speed")
-        .description("How fast should you be when dodging arrow")
+        .description("How fast should you be when dodging arrow.")
         .defaultValue(1)
         .min(0.01)
         .sliderRange(0.01, 5)
@@ -82,7 +82,7 @@ public class ArrowDodge extends Module {
 
     public final Setting<Integer> simulationSteps = sgGeneral.add(new IntSetting.Builder()
         .name("simulation-steps")
-        .description("How many steps to simulate projectiles. Zero for no limit")
+        .description("How many steps to simulate projectiles. Zero for no limit.")
         .defaultValue(500)
         .sliderMax(5000)
         .build()
@@ -100,8 +100,8 @@ public class ArrowDodge extends Module {
     );
 
     private final ProjectileEntitySimulator simulator = new ProjectileEntitySimulator();
-    private final Pool<Vec3> vec3s = new Pool<>(Vec3::new);
-    private final List<Vec3> points = new ArrayList<>();
+    private final Pool<Vector3d> vec3s = new Pool<>(Vector3d::new);
+    private final List<Vector3d> points = new ArrayList<>();
 
     public ArrowDodge() {
         super(Categories.Combat, "arrow-dodge", "Tries to dodge arrows coming at you.");
@@ -109,7 +109,7 @@ public class ArrowDodge extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        for (Vec3 point : points) vec3s.free(point);
+        for (Vector3d point : points) vec3s.free(point);
         points.clear();
 
         for (Entity e : mc.world.getEntities()) {
@@ -165,7 +165,7 @@ public class ArrowDodge extends Module {
         Vec3d playerPos = mc.player.getPos().add(velocity);
         Vec3d headPos = playerPos.add(0, 1, 0);
 
-        for (Vec3 pos : points) {
+        for (Vector3d pos : points) {
             Vec3d projectilePos = new Vec3d(pos.x, pos.y, pos.z);
             if (projectilePos.isInRange(playerPos, distanceCheck.get())) return false;
             if (projectilePos.isInRange(headPos, distanceCheck.get())) return false;

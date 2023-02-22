@@ -15,14 +15,15 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientCommandSource;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
-import net.minecraft.util.registry.DynamicRegistryManager;
+import net.minecraft.registry.BuiltinRegistries;
+import net.minecraft.server.command.CommandManager;
 
 import java.util.*;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class Commands extends System<Commands> {
-    public static final CommandRegistryAccess REGISTRY_ACCESS = new CommandRegistryAccess(DynamicRegistryManager.BUILTIN.get());
+    public static final CommandRegistryAccess REGISTRY_ACCESS = CommandManager.createRegistryAccess(BuiltinRegistries.createWrapperLookup());
 
     private final CommandDispatcher<CommandSource> DISPATCHER = new CommandDispatcher<>();
     private final CommandSource COMMAND_SOURCE = new ChatCommandSource(mc);
@@ -65,6 +66,7 @@ public class Commands extends System<Commands> {
         add(new SpectateCommand());
         add(new GamemodeCommand());
         add(new SaveMapCommand());
+        add(new MacroCommand());
         add(new ModulesCommand());
         add(new BindsCommand());
         add(new GiveCommand());
@@ -73,6 +75,7 @@ public class Commands extends System<Commands> {
         add(new FOVCommand());
         add(new RotationCommand());
         add(new WaypointCommand());
+        add(new InputCommand());
 
         commands.sort(Comparator.comparing(Command::getName));
     }

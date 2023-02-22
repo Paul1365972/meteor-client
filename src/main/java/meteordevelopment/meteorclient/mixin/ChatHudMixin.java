@@ -27,6 +27,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.network.message.MessageSignatureData;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -77,7 +78,7 @@ public abstract class ChatHudMixin implements IChatHud {
     private void onAddMessage(Text message, @Nullable MessageSignatureData signature, int ticks, @Nullable MessageIndicator indicator, boolean refresh, CallbackInfo info) {
         if (skipOnAddMessage) return;
 
-        ReceiveMessageEvent event = MeteorClient.EVENT_BUS.post(ReceiveMessageEvent.get(message, nextId));
+        ReceiveMessageEvent event = MeteorClient.EVENT_BUS.post(ReceiveMessageEvent.get(message, indicator, nextId));
 
         if (event.isCancelled()) info.cancel();
         else {
@@ -88,7 +89,7 @@ public abstract class ChatHudMixin implements IChatHud {
                 info.cancel();
 
                 skipOnAddMessage = true;
-                addMessage(event.getMessage(), signature, ticks, indicator, refresh);
+                addMessage(event.getMessage(), signature, ticks, event.getIndicator(), refresh);
                 skipOnAddMessage = false;
             }
         }
@@ -102,7 +103,7 @@ public abstract class ChatHudMixin implements IChatHud {
     }
 
     @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(MatrixStack matrices, int tickDelta, CallbackInfo ci) {
+    private void onRender(MatrixStack matrices, int currentTick, int mouseX, int mouseY, CallbackInfo info) {
         if (!Modules.get().get(BetterChat.class).displayPlayerHeads()) return;
         if (mc.options.getChatVisibility().getValue() == ChatVisibility.HIDDEN) return;
         int maxLineCount = mc.inGameHud.getChatHud().getVisibleLineCount();
@@ -111,13 +112,17 @@ public abstract class ChatHudMixin implements IChatHud {
         double g = 9.0D * (mc.options.getChatLineSpacing().getValue() + 1.0D);
         double h = -8.0D * (mc.options.getChatLineSpacing().getValue() + 1.0D) + 4.0D * mc.options.getChatLineSpacing().getValue() + 8.0D;
 
+        float chatScale = (float) this.getChatScale();
+        float scaledHeight = mc.getWindow().getScaledHeight();
+
         matrices.push();
-        matrices.translate(2, -0.1f, 10);
+        matrices.scale(chatScale, chatScale, 1.0f);
+        matrices.translate(2.0f, MathHelper.floor((scaledHeight - 40) / chatScale) - g - 0.1f, 10.0f);
         RenderSystem.enableBlend();
         for(int m = 0; m + this.scrolledLines < this.visibleMessages.size() && m < maxLineCount; ++m) {
             ChatHudLine.Visible chatHudLine = this.visibleMessages.get(m + this.scrolledLines);
             if (chatHudLine != null) {
-                int x = tickDelta - chatHudLine.addedTime();
+                int x = currentTick - chatHudLine.addedTime();
                 if (x < 200 || isChatFocused()) {
                     double o = isChatFocused() ? 1.0D : getMessageOpacityMultiplier(x);
                     if (o * d > 0.01D) {
@@ -152,6 +157,9 @@ public abstract class ChatHudMixin implements IChatHud {
     @Shadow
     @Final
     private List<ChatHudLine> messages;
+
+    @Shadow
+    public abstract double getChatScale();
 
     private void drawIcon(MatrixStack matrices, String line, int y, float opacity) {
         if (METEOR_PREFIX_REGEX.matcher(line).find()) {

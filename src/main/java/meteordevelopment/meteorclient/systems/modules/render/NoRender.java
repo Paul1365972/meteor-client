@@ -76,9 +76,9 @@ public class NoRender extends Module {
         .build()
     );
 
-    private final Setting<Boolean> noWaterOverlay = sgOverlay.add(new BoolSetting.Builder()
-        .name("water-overlay")
-        .description("Disables rendering of the water overlay.")
+    private final Setting<Boolean> noLiquidOverlay = sgOverlay.add(new BoolSetting.Builder()
+        .name("liquid-overlay")
+        .description("Disables rendering of the liquid overlay.")
         .defaultValue(false)
         .build()
     );
@@ -118,6 +118,13 @@ public class NoRender extends Module {
         .build()
     );
 
+    private final Setting<Boolean> noEnchantGlint = sgOverlay.add(new BoolSetting.Builder()
+        .name("enchantment-glint")
+        .description("Disables rending of the enchantment glint.")
+        .defaultValue(false)
+        .build()
+    );
+
     // HUD
 
     private final Setting<Boolean> noBossBar = sgHUD.add(new BoolSetting.Builder()
@@ -148,6 +155,13 @@ public class NoRender extends Module {
         .build()
     );
 
+    private final Setting<Boolean> noObfuscation = sgHUD.add(new BoolSetting.Builder()
+        .name("obfuscation")
+        .description("Disables obfuscation styling of characters.")
+        .defaultValue(false)
+        .build()
+    );
+
     private final Setting<Boolean> noPotionIcons = sgHUD.add(new BoolSetting.Builder()
         .name("potion-icons")
         .description("Disables rendering of status effect icons.")
@@ -172,10 +186,10 @@ public class NoRender extends Module {
     );
 
     private final Setting<Boolean> noBlindness = sgWorld.add(new BoolSetting.Builder()
-    .name("blindness")
-    .description("Disables rendering of blindness.")
-    .defaultValue(false)
-    .build()
+        .name("blindness")
+        .description("Disables rendering of blindness.")
+        .defaultValue(false)
+        .build()
     );
 
     private final Setting<Boolean> noDarkness = sgWorld.add(new BoolSetting.Builder()
@@ -223,6 +237,13 @@ public class NoRender extends Module {
     private final Setting<Boolean> noSkylightUpdates = sgWorld.add(new BoolSetting.Builder()
         .name("skylight-updates")
         .description("Disables rendering of skylight updates.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> noBeaconBeams = sgWorld.add(new BoolSetting.Builder()
+        .name("beacon-beams")
+        .description("Disables rendering of beacon beams.")
         .defaultValue(false)
         .build()
     );
@@ -283,6 +304,13 @@ public class NoRender extends Module {
         .build()
     );
 
+    private final Setting<Boolean> dropSpawnPacket = sgEntity.add(new BoolSetting.Builder()
+        .name("drop-spawn-packets")
+        .description("WARNING! Drops all spawn packets of entities selected in the above list.")
+        .defaultValue(false)
+        .build()
+    );
+
     private final Setting<Boolean> noArmor = sgEntity.add(new BoolSetting.Builder()
         .name("armor")
         .description("Disables rendering of armor on entities.")
@@ -293,6 +321,13 @@ public class NoRender extends Module {
     private final Setting<Boolean> noInvisibility = sgEntity.add(new BoolSetting.Builder()
         .name("invisibility")
         .description("Shows invisible entities.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> noGlowing = sgEntity.add(new BoolSetting.Builder()
+        .name("glowing")
+        .description("Disables rendering of the glowing effect")
         .defaultValue(false)
         .build()
     );
@@ -348,8 +383,8 @@ public class NoRender extends Module {
         return isActive() && noFireOverlay.get();
     }
 
-    public boolean noWaterOverlay() {
-        return isActive() && noWaterOverlay.get();
+    public boolean noLiquidOverlay() {
+        return isActive() && noLiquidOverlay.get();
     }
 
     public boolean noPowderedSnowOverlay() {
@@ -376,6 +411,10 @@ public class NoRender extends Module {
         return isActive() && noEatParticles.get();
     }
 
+    public boolean noEnchantGlint() {
+        return isActive() && noEnchantGlint.get();
+    }
+
     // HUD
 
     public boolean noBossBar() {
@@ -392,6 +431,10 @@ public class NoRender extends Module {
 
     public boolean noHeldItemName() {
         return isActive() && noHeldItemName.get();
+    }
+
+    public boolean noObfuscation() {
+        return isActive() && noObfuscation.get();
     }
 
     public boolean noPotionIcons() {
@@ -440,6 +483,10 @@ public class NoRender extends Module {
         return isActive() && noSkylightUpdates.get();
     }
 
+    public boolean noBeaconBeams() {
+        return isActive() && noBeaconBeams.get();
+    }
+
     public boolean noFallingBlocks() {
         return isActive() && noFallingBlocks.get();
     }
@@ -479,12 +526,24 @@ public class NoRender extends Module {
         return isActive() && entities.get().getBoolean(entity.getType());
     }
 
+    public boolean noEntity(EntityType<?> entity) {
+        return isActive() && entities.get().getBoolean(entity);
+    }
+
+    public boolean getDropSpawnPacket() {
+        return isActive() && dropSpawnPacket.get();
+    }
+
     public boolean noArmor() {
         return isActive() && noArmor.get();
     }
 
     public boolean noInvisibility() {
         return isActive() && noInvisibility.get();
+    }
+
+    public boolean noGlowing() {
+        return isActive() && noGlowing.get();
     }
 
     public boolean noMobInSpawner() {

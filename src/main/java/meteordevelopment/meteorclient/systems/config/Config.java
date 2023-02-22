@@ -82,7 +82,7 @@ public class Config extends System<Config> {
         .name("window-title-text")
         .description("The text it displays in the window title.")
         .visible(customWindowTitle::get)
-        .defaultValue("Minecraft {mc_version} - Meteor Client {version}")
+        .defaultValue("Minecraft {mc_version} - {meteor.name} {meteor.version}")
         .onChanged(value -> mc.updateWindowTitle())
         .build()
     );
@@ -131,6 +131,14 @@ public class Config extends System<Config> {
         .name("use-team-color")
         .description("Uses player's team color for rendering things like esp and tracers.")
         .defaultValue(true)
+        .build()
+    );
+
+    public final Setting<Integer> moduleSearchCount = sgMisc.add(new IntSetting.Builder()
+        .name("module-search-count")
+        .description("Amount of modules and settings to be shown in the module search bar.")
+        .defaultValue(8)
+        .min(1).sliderMax(12)
         .build()
     );
 
